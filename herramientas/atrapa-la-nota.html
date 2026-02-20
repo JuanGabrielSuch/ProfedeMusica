@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atrapa la Nota | Aula de Música</title>
+    <link rel="stylesheet" href="../style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .juego-container {
+            text-align: center;
+            background: white;
+            padding: 3rem 1rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            margin-top: 2rem;
+            position: relative;
+        }
+
+        .marcador {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary);
+            background: #f0efff;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
+
+        .pentagrama {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            height: 120px; 
+            /* He ampliado el margen inferior para que quepa el Do grave */
+            margin: 4rem auto 4rem auto; 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .linea-pentagrama {
+            width: 100%;
+            height: 2px;
+            background-color: #2d3436;
+        }
+
+        /* LA REDONDA */
+        #nota {
+            position: absolute;
+            left: 50%;
+            width: 26px;
+            height: 18px;
+            background-color: transparent;
+            border: 4px solid #2d3436; 
+            border-radius: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg); 
+            transition: top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s;
+        }
+
+        /* La magia para la línea adicional del Do Grave */
+        #nota.con-linea-adicional::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -30%;
+            width: 160%;
+            height: 3px;
+            background-color: #2d3436;
+            /* Hay que contrarrestar los -15 grados de la nota para que la línea quede recta */
+            transform: translateY(-50%) rotate(15deg); 
+            border-radius: 2px;
+        }
+
+        .botones-notas {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+            min-height: 60px; 
+        }
+
+        .btn-nota {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .btn-nota:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .btn-nota:active {
+            transform: translateY(2px);
+        }
+
+        #mensaje-feedback {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 1rem;
+            min-height: 35px;
+            transition: color 0.3s;
+        }
+
+        .shake {
+            animation: temblor 0.4s;
+        }
+
+        @keyframes temblor {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎵 Atrapa la Nota</h1>
+        <p>¿Eres capaz de leer el pentagrama sin fallar?</p>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="btn-volver">⬅ Volver al Panel</a>
+
+        <section class="juego-container" id="zona-juego">
+            
+            <div class="marcador">🔥 Racha: <span id="puntos">0</span></div>
+            
+            <div class="pentagrama">
+                <div class="linea-pentagrama"></div> <div class="linea-pentagrama"></div> <div class="linea-pentagrama"></div> <div class="linea-pentagrama"></div> <div class="linea-pentagrama"></div> <div id="nota"></div>
+            </div>
+
+            <div id="mensaje-feedback">¡Atento al pentagrama!</div>
+
+            <div class="botones-notas" id="contenedor-botones"></div>
+            
+        </section>
+    </main>
+
+    <script>
+        // Repertorio completo para la flauta escolar
+        const notasDisponibles = [
+            { nombre: 'Do grave', posicion: '150px', lineaAdicional: true }, // Debajo del pentagrama
+            { nombre: 'Re', posicion: '135px', lineaAdicional: false },
+            { nombre: 'Mi', posicion: '120px', lineaAdicional: false },      // Primera línea
+            { nombre: 'Fa', posicion: '105px', lineaAdicional: false },
+            { nombre: 'Sol', posicion: '90px', lineaAdicional: false },
+            { nombre: 'La', posicion: '75px', lineaAdicional: false },
+            { nombre: 'Si', posicion: '60px', lineaAdicional: false },
+            { nombre: 'Do agudo', posicion: '45px', lineaAdicional: false },
+            { nombre: 'Re agudo', posicion: '30px', lineaAdicional: false }  // Cuarta línea
+        ];
+
+        let notaActual = {};
+        let racha = 0;
+        let bloqueado = false; 
+
+        const elementoNota = document.getElementById('nota');
+        const elementoMensaje = document.getElementById('mensaje-feedback');
+        const contenedorBotones = document.getElementById('contenedor-botones');
+        const elementoPuntos = document.getElementById('puntos');
+        const zonaJuego = document.getElementById('zona-juego');
+
+        function barajar(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function generarNuevaNota() {
+            bloqueado = false;
+            elementoNota.style.backgroundColor = 'transparent'; 
+
+            // Elegir nota
+            const indiceAleatorio = Math.floor(Math.random() * notasDisponibles.length);
+            notaActual = notasDisponibles[indiceAleatorio];
+            elementoNota.style.top = notaActual.posicion;
+
+            // Añadir o quitar la línea adicional si es el Do grave
+            if (notaActual.lineaAdicional) {
+                elementoNota.classList.add('con-linea-adicional');
+            } else {
+                elementoNota.classList.remove('con-linea-adicional');
+            }
+            
+            // Generar botones falsos
+            let notasFalsas = notasDisponibles.filter(n => n.nombre !== notaActual.nombre);
+            notasFalsas = barajar(notasFalsas).slice(0, 2);
+
+            let opciones = [notaActual, ...notasFalsas];
+            opciones = barajar(opciones);
+
+            contenedorBotones.innerHTML = '';
+            opciones.forEach(opcion => {
+                const boton = document.createElement('button');
+                boton.className = 'btn-nota';
+                boton.innerText = opcion.nombre.toUpperCase();
+                boton.onclick = () => comprobarNota(opcion.nombre);
+                contenedorBotones.appendChild(boton);
+            });
+
+            elementoMensaje.innerText = '¿Qué nota es?';
+            elementoMensaje.style.color = 'var(--text)';
+        }
+
+        function comprobarNota(adivinanza) {
+            if (bloqueado) return; 
+            bloqueado = true;
+
+            if (adivinanza === notaActual.nombre) {
+                racha++;
+                elementoPuntos.innerText = racha;
+                elementoMensaje.innerText = '¡Correcto! 🎉';
+                elementoMensaje.style.color = '#27ae60';
+                elementoNota.style.backgroundColor = '#27ae60'; 
+                
+                setTimeout(generarNuevaNota, 1200);
+            } else {
+                racha = 0; 
+                elementoPuntos.innerText = racha;
+                elementoMensaje.innerText = '¡Uy! Era un ' + notaActual.nombre + ' 😅';
+                elementoMensaje.style.color = '#e74c3c';
+                elementoNota.style.backgroundColor = '#e74c3c'; 
+                
+                zonaJuego.classList.add('shake');
+                setTimeout(() => zonaJuego.classList.remove('shake'), 400);
+
+                setTimeout(generarNuevaNota, 2000); 
+            }
+        }
+
+        window.onload = generarNuevaNota;
+    </script>
+</body>
+</html>

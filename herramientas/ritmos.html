@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dados Rítmicos | Aula de Música</title>
+    <link rel="stylesheet" href="../style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .ritmos-container {
+            text-align: center;
+            background: white;
+            padding: 3rem 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            margin-top: 2rem;
+        }
+
+        .mesa-dados {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 3rem 0;
+            flex-wrap: wrap;
+        }
+
+        .dado {
+            background: #f9f9fb;
+            border: 3px solid var(--primary);
+            border-radius: 15px;
+            width: 120px;
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            transition: transform 0.4s ease, opacity 0.4s ease, background-color 0.2s, box-shadow 0.2s;
+        }
+
+        .dado.volteando {
+            transform: rotateY(90deg) scale(0.9);
+            opacity: 0.5;
+        }
+
+        /* --- NUEVO: EFECTO DE ILUMINACIÓN --- */
+        .dado.activo {
+            border-color: #27ae60;
+            background-color: #e8f8f5; /* Un verde súper clarito */
+            transform: scale(1.1); /* Se hace un poco más grande */
+            box-shadow: 0 0 25px rgba(39, 174, 96, 0.5); /* Resplandor verde */
+            z-index: 10;
+        }
+
+        .figura-musical {
+            font-size: 5rem;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+            line-height: 1;
+        }
+
+        .sílaba-kodaly {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--secondary);
+            text-transform: uppercase;
+        }
+
+        .botones-accion {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-lanzar, .btn-escuchar {
+            color: white;
+            border: none;
+            padding: 1.2rem 2rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s, opacity 0.2s;
+        }
+
+        .btn-lanzar { background: var(--primary); box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4); }
+        .btn-lanzar:hover { background: #5a4bcf; transform: translateY(-3px); }
+        
+        .btn-escuchar { background: #0984e3; box-shadow: 0 5px 15px rgba(9, 132, 227, 0.4); }
+        .btn-escuchar:hover:not(:disabled) { background: #076aba; transform: translateY(-3px); }
+        
+        .btn-lanzar:active, .btn-escuchar:active:not(:disabled) { transform: translateY(2px); }
+
+        /* Botón desactivado para que no le den 20 veces */
+        .btn-escuchar:disabled {
+            background: #b2bec3;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎲 Dados Rítmicos</h1>
+        <p>Genera un compás nuevo y escúchalo antes de dar palmas</p>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="btn-volver">⬅ Volver al Panel</a>
+
+        <section class="ritmos-container">
+            
+            <div class="mesa-dados" id="contenedor-dados">
+                <div class="dado"><span class="figura-musical">♩</span><span class="sílaba-kodaly">TA</span></div>
+                <div class="dado"><span class="figura-musical">♩</span><span class="sílaba-kodaly">TA</span></div>
+                <div class="dado"><span class="figura-musical">♩</span><span class="sílaba-kodaly">TA</span></div>
+                <div class="dado"><span class="figura-musical">♩</span><span class="sílaba-kodaly">TA</span></div>
+            </div>
+
+            <div class="botones-accion">
+                <button class="btn-lanzar" onclick="lanzarDados()">🎲 Generar Ritmo</button>
+                <button class="btn-escuchar" id="btn-escuchar" onclick="reproducirRitmo()">🔊 Escuchar Ritmo</button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const figurasDisponibles = [
+            { simbolo: '♩', silaba: 'TA' },       
+            { simbolo: '♫', silaba: 'TI-TI' },    
+            { simbolo: '𝄽', silaba: 'SHH' }       
+        ];
+
+        let contextoAudio = null;
+        const btnEscuchar = document.getElementById('btn-escuchar');
+
+        function lanzarDados() {
+            const dados = document.querySelectorAll('.dado');
+            dados.forEach((dado, index) => {
+                dado.classList.remove('activo'); // Por si se quedó alguno iluminado
+                dado.classList.add('volteando');
+                setTimeout(() => {
+                    const figuraAleatoria = figurasDisponibles[Math.floor(Math.random() * figurasDisponibles.length)];
+                    dado.innerHTML = `
+                        <span class="figura-musical">${figuraAleatoria.simbolo}</span>
+                        <span class="sílaba-kodaly">${figuraAleatoria.silaba}</span>
+                    `;
+                    dado.classList.remove('volteando');
+                }, 200 + (index * 50));
+            });
+        }
+
+        
+        // Sonido de la claqueta (Cuenta atrás) - Estilo metrónomo limpio
+        function hacerSonidoClaqueta(tiempo) {
+            const oscilador = contextoAudio.createOscillator();
+            const ganancia = contextoAudio.createGain();
+            
+            oscilador.type = 'sine'; // Onda suave y limpia
+            oscilador.frequency.value = 1000; // Tono agudo claro (1000 Hz)
+            
+            // Ataque rápido y caída corta para que suene a "clic"
+            ganancia.gain.setValueAtTime(0.8, tiempo); 
+            ganancia.gain.exponentialRampToValueAtTime(0.001, tiempo + 0.1);
+            
+            oscilador.connect(ganancia);
+            ganancia.connect(contextoAudio.destination);
+            
+            oscilador.start(tiempo);
+            oscilador.stop(tiempo + 0.1);
+        }
+        // Sonido de la percusión principal
+        function hacerSonidoPercusion(tiempo) {
+            const oscilador = contextoAudio.createOscillator();
+            const ganancia = contextoAudio.createGain();
+            oscilador.type = 'triangle'; 
+            oscilador.frequency.setValueAtTime(300, tiempo); 
+            oscilador.frequency.exponentialRampToValueAtTime(50, tiempo + 0.1); 
+            ganancia.gain.setValueAtTime(1, tiempo);
+            ganancia.gain.exponentialRampToValueAtTime(0.001, tiempo + 0.1);
+            oscilador.connect(ganancia);
+            ganancia.connect(contextoAudio.destination);
+            oscilador.start(tiempo);
+            oscilador.stop(tiempo + 0.1);
+        }
+
+        function reproducirRitmo() {
+            // Bloqueamos el botón para que no se superpongan audios
+            btnEscuchar.disabled = true;
+            btnEscuchar.innerText = '⏱️ Escucha...';
+
+            if (!contextoAudio) {
+                contextoAudio = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            const bpm = 80; 
+            const tiempoPorPulso = 60 / bpm; // Segundos por pulso
+            const milisegundosPorPulso = tiempoPorPulso * 1000; 
+            
+            let tiempoActual = contextoAudio.currentTime + 0.1; 
+
+            // 1. PROGRAMAR LA CLAQUETA PREVIA (4 golpes)
+            for (let i = 0; i < 4; i++) {
+                hacerSonidoClaqueta(tiempoActual);
+                tiempoActual += tiempoPorPulso;
+            }
+
+            // 2. LEER Y PROGRAMAR EL RITMO
+            const dados = document.querySelectorAll('.dado');
+
+            dados.forEach((dado, index) => {
+                const silaba = dado.querySelector('.sílaba-kodaly').innerText;
+
+                // --- MAGIA VISUAL: Iluminar la carta ---
+                // Calculamos en qué milisegundo exacto le toca a esta carta (después de la claqueta)
+                const retrasoVisual = (4 * milisegundosPorPulso) + (index * milisegundosPorPulso);
+                
+                setTimeout(() => {
+                    // Apagamos todas y encendemos solo esta
+                    dados.forEach(d => d.classList.remove('activo'));
+                    dado.classList.add('activo');
+                    
+                    // Apagarla cuando termine su tiempo y reactivar botón si es la última
+                    setTimeout(() => {
+                        dado.classList.remove('activo');
+                        if (index === 3) {
+                            btnEscuchar.disabled = false;
+                            btnEscuchar.innerText = '🔊 Escuchar Ritmo';
+                        }
+                    }, milisegundosPorPulso - 50);
+
+                }, retrasoVisual);
+
+                // --- MAGIA SONORA ---
+                if (silaba === 'TA') {
+                    hacerSonidoPercusion(tiempoActual);
+                } else if (silaba === 'TI-TI') {
+                    hacerSonidoPercusion(tiempoActual);
+                    hacerSonidoPercusion(tiempoActual + (tiempoPorPulso / 2));
+                }
+                
+                // Avanzamos el reloj de audio un pulso entero para todos (incluido el silencio SHH)
+                tiempoActual += tiempoPorPulso; 
+            });
+        }
+    </script>
+</body>
+</html>
