@@ -196,3 +196,169 @@ a.tool-card {
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     margin-top: 2rem;
 }
+
+/* --- ESTILOS CARRERA DE NOTAS --- */
+.controles-carrera {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 2rem;
+}
+
+#selector-nivel {
+    padding: 0.5rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: 2px solid var(--primary);
+    font-family: inherit;
+}
+
+.pista-carreras {
+    background: #fdfbfb;
+    border: 3px solid #dfe6e9;
+    border-radius: 10px;
+    padding: 10px 0;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.carril {
+    height: 50px;
+    border-bottom: 2px dashed #b2bec3;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.carril:last-child {
+    border-bottom: none;
+}
+
+.meta {
+    position: absolute;
+    right: 10px;
+    font-size: 2rem;
+    opacity: 0.5;
+}
+
+.caballo {
+    font-size: 2.5rem;
+    position: absolute;
+    left: 2%; /* Empiezan en el 2% */
+    transition: left 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Efecto de saltito al avanzar */
+    z-index: 2;
+}
+
+.clave {
+    position: absolute;
+    left: -40px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 5rem;
+    line-height: 1;
+}
+
+/* Colores para los botones de equipos */
+.equipo-1 { background-color: #e67e22; }
+.equipo-2 { background-color: #9b59b6; }
+.equipo-3 { background-color: #27ae60; }
+
+.equipo-1:hover { background-color: #d35400; }
+.equipo-2:hover { background-color: #8e44ad; }
+.equipo-3:hover { background-color: #2ecc71; }
+
+/* --- ESTILOS QUE FALTABAN (Pentagrama, Notas y Botones) --- */
+.juego-container {
+    text-align: center;
+    background: white;
+    padding: 3rem 1rem;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    margin-top: 2rem;
+    position: relative;
+}
+
+.pentagrama {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    /* Esto le devuelve la altura para que las líneas se separen */
+    height: 120px; 
+    /* El margen izquierdo deja espacio para la clave de Sol/Fa */
+    margin: 4rem auto 4rem 3rem; 
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.linea-pentagrama {
+    width: 100%;
+    height: 2px;
+    background-color: #2d3436;
+}
+
+#nota {
+    position: absolute;
+    left: 50%;
+    width: 26px;
+    height: 18px;
+    background-color: transparent;
+    border: 4px solid #2d3436; 
+    border-radius: 50%;
+    transform: translate(-50%, -50%) rotate(-15deg); 
+    transition: top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s;
+}
+
+#nota.con-linea-adicional::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -30%;
+    width: 160%;
+    height: 3px;
+    background-color: #2d3436;
+    transform: translateY(-50%) rotate(15deg); 
+    border-radius: 2px;
+}
+
+/* Le devolvemos el diseño chulo a los botones */
+.botones-notas {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+    min-height: 60px; 
+}
+
+.btn-nota {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.btn-nota:hover {
+    transform: translateY(-2px);
+}
+
+.btn-nota:active {
+    transform: translateY(2px);
+}
+
+/* Ajuste fino para la clave musical */
+.clave {
+    position: absolute;
+    left: -50px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 5rem;
+    line-height: 1;
+}
